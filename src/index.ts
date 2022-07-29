@@ -5,7 +5,7 @@ import { EventEmitter } from "stream";
 
 const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 
-declare interface IAdbDevice {
+interface IAdbDevice {
   androidId: string;
   deviceState?: string;
   product?: string;
