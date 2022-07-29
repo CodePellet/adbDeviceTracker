@@ -1,4 +1,3 @@
-import log from "electron-log";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
 
@@ -72,9 +71,6 @@ export class AdbDeviceTracker extends EventEmitter {
       if (!socketWriteResult) {
         this.socket.destroy({ name: "socketWriteDataError", message: "Writing data to socket failed" })
       }
-
-      log.info("[AdbDeviceTracker]", "connected to socket", `Config: ${this.socketConfig}`);
-
     });
   }
 
@@ -105,8 +101,6 @@ export class AdbDeviceTracker extends EventEmitter {
       .trim()
       .split("\n");
 
-    log.info("[AdbDeviceTracker]", "Found devices raw:", devicesArray);
-
     // eslint-disable-next-line array-callback-return
     devicesArray.forEach((d) => {
       const [androidId, deviceState, product, model, device, transportId] = d
@@ -122,8 +116,6 @@ export class AdbDeviceTracker extends EventEmitter {
         transportId
       });
     });
-    log.info("[AdbDeviceTracker]", "Found devices object:", this.adbDevices);
-
     this.emit("data", this.adbDevices);
   }
 

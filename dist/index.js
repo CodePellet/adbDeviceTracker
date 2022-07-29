@@ -1,10 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdbDeviceTracker = void 0;
-const electron_log_1 = __importDefault(require("electron-log"));
 const net_1 = require("net");
 const stream_1 = require("stream");
 const zeroPad = (num, places) => String(num).padStart(places, "0");
@@ -35,7 +31,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             if (!socketWriteResult) {
                 this.socket.destroy({ name: "socketWriteDataError", message: "Writing data to socket failed" });
             }
-            electron_log_1.default.info("[AdbDeviceTracker]", "connected to socket", `Config: ${this.socketConfig}`);
         });
     }
     onData(data) {
@@ -57,7 +52,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             .slice(0, deviceString.lastIndexOf("\n"))
             .trim()
             .split("\n");
-        electron_log_1.default.info("[AdbDeviceTracker]", "Found devices raw:", devicesArray);
         devicesArray.forEach((d) => {
             const [androidId, deviceState, product, model, device, transportId] = d
                 .replace(/transport_id:|device:|model:|product:/g, "")
@@ -71,7 +65,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 transportId
             });
         });
-        electron_log_1.default.info("[AdbDeviceTracker]", "Found devices object:", this.adbDevices);
         this.emit("data", this.adbDevices);
     }
     onClose() {
