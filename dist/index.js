@@ -88,3 +88,4 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
     }
 }
 exports.AdbDeviceTracker = AdbDeviceTracker;
+//# sourceMappingURL=index.js.map
