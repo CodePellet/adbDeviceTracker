@@ -21,7 +21,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         this.socket.on("close", this.onClose);
     }
     start() {
-        console.debug("this.socketConfig", this.socketConfig);
         return this.socket.connect({
             host: this.socketConfig.host,
             port: this.socketConfig.port

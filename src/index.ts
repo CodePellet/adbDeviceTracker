@@ -59,7 +59,6 @@ export class AdbDeviceTracker extends EventEmitter {
   }
 
   public start(): Socket {
-    console.debug("this.socketConfig", this.socketConfig);
     return this.socket.connect({
       host: this.socketConfig.host,
       port: this.socketConfig.port
