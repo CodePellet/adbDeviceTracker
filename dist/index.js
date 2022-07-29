@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdbDeviceTracker = void 0;
-const net_1 = require("net");
 const electron_log_1 = __importDefault(require("electron-log"));
+const net_1 = require("net");
 const stream_1 = require("stream");
 const zeroPad = (num, places) => String(num).padStart(places, "0");
 class AdbDeviceTracker extends stream_1.EventEmitter {
@@ -41,15 +41,11 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
     onData(data) {
         this.adbDevices = [];
         const deviceLength = data.toString().replace("OKAY", "").slice(0, 4);
-        // Remove the first 4 characters as they represent the data length
         const deviceString = data
             .toString()
             .replace("OKAY", "")
             .slice(4)
             .replace(/\s\s+/g, " ");
-        // devices get registered as offline for the first time
-        // no information about the device is available at this point
-        // so we do not process this event
         if (deviceString.match("offline"))
             return;
         if (deviceLength.match("0000")) {
@@ -62,7 +58,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             .trim()
             .split("\n");
         electron_log_1.default.info("[AdbDeviceTracker]", "Found devices raw:", devicesArray);
-        // eslint-disable-next-line array-callback-return
         devicesArray.forEach((d) => {
             const [androidId, deviceState, product, model, device, transportId] = d
                 .replace(/transport_id:|device:|model:|product:/g, "")

@@ -1,7 +1,37 @@
-import { IAdbDevice, ISocketConfig } from "./index.schema";
-import { Socket } from "net";
 import log from "electron-log";
+import { Socket } from "net";
 import { EventEmitter } from "stream";
+
+interface IAdbDevice {
+  androidId: string;
+  deviceState?: string;
+  product?: string;
+  model?: string;
+  device?: string;
+  transportId?: string;
+  error?: Error
+}
+
+interface ISocketConfig {
+  host: string;
+  port: number;
+  autoReconnect: {
+    enabled: boolean;
+    intervall: number;
+  };
+}
+
+interface AdbDeviceEvents {
+  data: (adbDevices: IAdbDevice[]) => void;
+  error: (error: Error) => void;
+}
+
+export declare interface AdbDeviceTracker {
+  on<U extends keyof AdbDeviceEvents>(event: U, listener: AdbDeviceEvents[U]): this;
+  emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
+}
+
+
 
 const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 export class AdbDeviceTracker extends EventEmitter {
