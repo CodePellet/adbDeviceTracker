@@ -11,7 +11,16 @@ interface IAdbDevice {
     transportId?: string;
     error?: Error;
 }
+interface ISocketConfig {
+    host: string;
+    port: number;
+    autoReconnect: {
+        enabled: boolean;
+        intervall: number;
+    };
+}
 interface AdbDeviceEvents {
+    info: (message: string) => void;
     data: (adbDevices: IAdbDevice[]) => void;
     error: (error: Error) => void;
 }
@@ -20,13 +29,13 @@ export declare interface AdbDeviceTracker {
     emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
 export declare class AdbDeviceTracker extends EventEmitter {
-    private static _instance;
     private adbDevices;
     private socket;
     private socketConfig;
-    private constructor();
-    static getInstance(): AdbDeviceTracker;
+    private timeout;
+    constructor(socketConfig?: Partial<ISocketConfig>);
     start(): Socket;
+    private onConnect;
     private onData;
     private onClose;
     private onError;

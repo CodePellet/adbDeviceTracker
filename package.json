@@ -24,8 +24,5 @@
   "homepage": "https://github.com/CodePellet/adbDeviceTracker#readme",
   "devDependencies": {
     "@types/node": "^18.6.2"
-  },
-  "dependencies": {
-    "electron-log": "^4.4.8"
   }
 }

@@ -21,6 +21,7 @@ interface ISocketConfig {
 }
 
 interface AdbDeviceEvents {
+  info: (message: string) => void;
   data: (adbDevices: IAdbDevice[]) => void;
   error: (error: Error) => void;
 }
@@ -35,43 +36,47 @@ export declare interface AdbDeviceTracker {
 const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 export class AdbDeviceTracker extends EventEmitter {
 
-  private static _instance: AdbDeviceTracker;
   private adbDevices: IAdbDevice[];
-  private socket: Socket;
+  private socket: Socket = new Socket();
   private socketConfig: ISocketConfig;
+  private timeout!: NodeJS.Timeout;
 
-  private constructor(socketConfig?: ISocketConfig) {
+  constructor(socketConfig?: Partial<ISocketConfig>) {
     super();
     this.adbDevices = [];
-    this.socketConfig = socketConfig || { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } };
-    this.socket = new Socket();
+    this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 }, ...socketConfig };
 
+    this.start = this.start.bind(this);
+    this.onConnect = this.onConnect.bind(this);
     this.onData = this.onData.bind(this);
     this.onClose = this.onClose.bind(this);
     this.onError = this.onError.bind(this);
 
+    this.socket.on("connect", this.onConnect)
     this.socket.on("data", this.onData);
     this.socket.on("error", this.onError);
     this.socket.on("close", this.onClose);
   }
 
-  public static getInstance() {
-    return this._instance || (this._instance = new this());
-  }
-
   public start(): Socket {
+    console.debug("this.socketConfig", this.socketConfig);
     return this.socket.connect({
       host: this.socketConfig.host,
       port: this.socketConfig.port
-    }).on("connect", () => {
-      const trackDevicesPayload: string = "host:track-devices-l";
-      const trackDevicesPayloadLength = zeroPad(trackDevicesPayload.length.toString(16), 4);
-      const socketWriteResult = this.socket.write(`${trackDevicesPayloadLength}${trackDevicesPayload}`);
-
-      if (!socketWriteResult) {
-        this.socket.destroy({ name: "socketWriteDataError", message: "Writing data to socket failed" })
-      }
     });
+  }
+
+  private onConnect() {
+    const trackDevicesPayload: string = "host:track-devices-l";
+    const trackDevicesPayloadLength = zeroPad(trackDevicesPayload.length.toString(16), 4);
+    const socketWriteResult = this.socket.write(`${trackDevicesPayloadLength}${trackDevicesPayload}`);
+
+    clearTimeout(this.timeout);
+
+    if (!socketWriteResult) {
+      this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" })
+    }
+    this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.")
   }
 
   private onData(data: Buffer) {
@@ -120,8 +125,8 @@ export class AdbDeviceTracker extends EventEmitter {
   }
 
   private onClose(): void {
-    if (this.socketConfig.autoReconnect.enabled)
-      setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
+    if (this.socketConfig?.autoReconnect?.enabled)
+      this.timeout = setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
   }
 
   private onError(error: Error) {
