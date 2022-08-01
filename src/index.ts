@@ -149,7 +149,7 @@ export class AdbDeviceTracker extends EventEmitter {
       this.timeout = setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
   }
 
-  private onError(error: Error) {
+  private onError(error: NodeJS.ErrnoException) {
     this.emit("error", error);
   }
 
