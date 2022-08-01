@@ -1,5 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
+import { ExecException } from "child_process";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
 interface IAdbDevice {
@@ -34,6 +35,11 @@ export declare class AdbDeviceTracker extends EventEmitter {
     private socketConfig;
     private timeout;
     constructor(socketConfig?: Partial<ISocketConfig>);
+    server: {
+        start: (callback: (error: ExecException | null, stdout: string, stderr: string) => void) => void;
+        stop: (callback: (error: ExecException | null, stdout: string, stderr: string) => void) => void;
+    };
+    private execAdbCommand;
     start(): Socket;
     private onConnect;
     private onData;

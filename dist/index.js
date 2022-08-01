@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdbDeviceTracker = void 0;
+const child_process_1 = require("child_process");
 const net_1 = require("net");
 const stream_1 = require("stream");
 const zeroPad = (num, places) => String(num).padStart(places, "0");
@@ -8,6 +9,20 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
     constructor(socketConfig) {
         super();
         this.socket = new net_1.Socket();
+        this.server = {
+            start: (callback) => {
+                this.execAdbCommand("start-server", function (error, stdout, stderr) {
+                    if (callback)
+                        callback(error, stdout, stderr);
+                });
+            },
+            stop: (callback) => {
+                this.execAdbCommand("kill-server", function (error, stdout, stderr) {
+                    if (callback)
+                        callback(error, stdout, stderr);
+                });
+            }
+        };
         this.adbDevices = [];
         this.socketConfig = Object.assign({ host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } }, socketConfig);
         this.start = this.start.bind(this);
@@ -19,6 +34,9 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         this.socket.on("data", this.onData);
         this.socket.on("error", this.onError);
         this.socket.on("close", this.onClose);
+    }
+    execAdbCommand(command, callback) {
+        (0, child_process_1.exec)("adb " + command, callback);
     }
     start() {
         return this.socket.connect({

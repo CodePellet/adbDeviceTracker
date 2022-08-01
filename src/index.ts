@@ -1,3 +1,4 @@
+import { ChildProcess, exec, ExecException, execSync } from "child_process";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
 
@@ -57,6 +58,26 @@ export class AdbDeviceTracker extends EventEmitter {
     this.socket.on("error", this.onError);
     this.socket.on("close", this.onClose);
   }
+
+  public server = {
+    start: (callback: (error: ExecException | null, stdout: string, stderr: string) => void): void => {
+      this.execAdbCommand("start-server", function (error, stdout, stderr) {
+        if (callback)
+          callback(error, stdout, stderr);
+      });
+    },
+    stop: (callback: (error: ExecException | null, stdout: string, stderr: string) => void): void => {
+      this.execAdbCommand("kill-server", function (error, stdout, stderr) {
+        if (callback)
+          callback(error, stdout, stderr);
+      });
+    }
+  };
+
+  private execAdbCommand(command: string, callback: (error: ExecException | null, stdout: string, stderr: string) => void): void {
+    exec("adb " + command, callback);
+  }
+
 
   public start(): Socket {
     return this.socket.connect({
