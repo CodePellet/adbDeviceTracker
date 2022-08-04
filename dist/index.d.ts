@@ -1,5 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
 import { ExecException } from "child_process";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
@@ -23,7 +24,7 @@ interface ISocketConfig {
 interface AdbDeviceEvents {
     info: (message: string) => void;
     data: (adbDevices: IAdbDevice[]) => void;
-    error: (error: Error) => void;
+    error: (error: NodeJS.ErrnoException) => void;
 }
 export declare interface AdbDeviceTracker {
     on<U extends keyof AdbDeviceEvents>(event: U, listener: AdbDeviceEvents[U]): this;

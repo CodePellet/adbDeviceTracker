@@ -65,8 +65,8 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         if (deviceString.match("offline"))
             return;
         if (deviceLength.match("0000")) {
-            this.adbDevices.push({ androidId: "-1", error: { name: "noDevicesError", message: "No devices connected" } });
-            this.emit("error", { name: "noDevicesError", message: "No devices connected" });
+            this.adbDevices.push({ androidId: "-1", error: { name: "ENODEVICES", message: "No devices connected" } });
+            this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
             return;
         }
         const devicesArray = deviceString
