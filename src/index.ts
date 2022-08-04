@@ -24,7 +24,7 @@ interface ISocketConfig {
 interface AdbDeviceEvents {
   info: (message: string) => void;
   data: (adbDevices: IAdbDevice[]) => void;
-  error: (error: Error) => void;
+  error: (error: NodeJS.ErrnoException) => void;
 }
 
 export declare interface AdbDeviceTracker {
@@ -116,8 +116,8 @@ export class AdbDeviceTracker extends EventEmitter {
     if (deviceString.match("offline")) return;
 
     if (deviceLength.match("0000")) {
-      this.adbDevices.push({ androidId: "-1", error: { name: "noDevicesError", message: "No devices connected" } });
-      this.emit("error", { name: "noDevicesError", message: "No devices connected" });
+      this.adbDevices.push({ androidId: "-1", error: { name: "ENODEVICES", message: "No devices connected" } });
+      this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
       return;
     }
 
