@@ -31,11 +31,14 @@ export declare interface AdbDeviceTracker {
     emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
 export declare class AdbDeviceTracker extends EventEmitter {
+    private static _instance;
     private adbDevices;
     private socket;
     private socketConfig;
     private timeout;
-    constructor(socketConfig?: Partial<ISocketConfig>);
+    private constructor();
+    static getInstance(): AdbDeviceTracker;
+    setSocketConfig(socketConfig?: Partial<ISocketConfig>): void;
     server: {
         start: (callback: (error: ExecException | null, stdout: string, stderr: string) => void) => void;
         stop: (callback: (error: ExecException | null, stdout: string, stderr: string) => void) => void;

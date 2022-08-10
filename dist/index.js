@@ -6,9 +6,8 @@ const net_1 = require("net");
 const stream_1 = require("stream");
 const zeroPad = (num, places) => String(num).padStart(places, "0");
 class AdbDeviceTracker extends stream_1.EventEmitter {
-    constructor(socketConfig) {
+    constructor() {
         super();
-        this.socket = new net_1.Socket();
         this.server = {
             start: (callback) => {
                 this.execAdbCommand("start-server", function (error, stdout, stderr) {
@@ -23,8 +22,9 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 });
             }
         };
+        this.socket = new net_1.Socket();
         this.adbDevices = [];
-        this.socketConfig = Object.assign({ host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } }, socketConfig);
+        this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } };
         this.start = this.start.bind(this);
         this.onConnect = this.onConnect.bind(this);
         this.onData = this.onData.bind(this);
@@ -34,6 +34,12 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         this.socket.on("data", this.onData);
         this.socket.on("error", this.onError);
         this.socket.on("close", this.onClose);
+    }
+    static getInstance() {
+        return this._instance || (this._instance = new this());
+    }
+    setSocketConfig(socketConfig) {
+        this.socketConfig = Object.assign(Object.assign({}, this.socketConfig), socketConfig);
     }
     execAdbCommand(command, callback) {
         (0, child_process_1.exec)("adb " + command, callback);
@@ -81,6 +87,7 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 .split(/\s/g);
             if (deviceState.toLowerCase() === "authorizing") {
                 this.writeToSocket(this.socket, "host:devices-l");
+                return;
             }
             this.adbDevices.push({
                 androidId,
@@ -91,7 +98,8 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 transportId
             });
         });
-        this.emit("data", this.adbDevices);
+        if (this.adbDevices.length > 0)
+            this.emit("data", this.adbDevices);
     }
     onClose() {
         var _a, _b;
