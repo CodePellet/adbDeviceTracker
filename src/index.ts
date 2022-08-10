@@ -105,7 +105,7 @@ export class AdbDeviceTracker extends EventEmitter {
   }
 
   private onData(data: Buffer): void {
-    const dataString = data.toString().substring(0, data.toString().lastIndexOf("\n")).replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "");
+    const dataString = data.toString().substring(0, data.toString().lastIndexOf("\n")).replace(/^OKAY/g, "").replace(/transport_id:|device:|model:|product:/g, "");
 
     if (dataString.match("offline")) return;
     // if (dataString.match("authorizing")) return;
@@ -115,7 +115,14 @@ export class AdbDeviceTracker extends EventEmitter {
     }
 
     // remove duplicates from the string as sometimes the same device is listed multiple times
-    const uniqueDevices = Array.from(new Set(dataString.split("\n")));
+    const uniqueDevices = Array.from(
+      new Set(
+        dataString
+          .split("\n")
+          .map(d =>
+            d.replace(/^[A-Za-z0-9]{4}/g, "")
+          )
+      ));
 
     this.adbDevices = uniqueDevices.map(d => {
       const [androidId, deviceState, product, model, device, transportId] = d.replace(/\s+/g, " ").split(/\s/g);
