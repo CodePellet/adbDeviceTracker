@@ -1,5 +1,5 @@
 import { ChildProcess, exec, ExecException, execSync } from "child_process";
-import { Socket } from "net";
+import { Socket, createConnection } from "net";
 import { EventEmitter } from "stream";
 
 interface IAdbDevice {
@@ -32,8 +32,6 @@ export declare interface AdbDeviceTracker {
   emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
 
-
-
 const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 export class AdbDeviceTracker extends EventEmitter {
 
@@ -41,11 +39,9 @@ export class AdbDeviceTracker extends EventEmitter {
   private adbDevices: IAdbDevice[];
   private socket: Socket;
   private socketConfig: ISocketConfig;
-  private timeout!: NodeJS.Timeout;
 
   private constructor() {
     super();
-    this.socket = new Socket();
     this.adbDevices = [];
     this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } };
 
@@ -54,7 +50,11 @@ export class AdbDeviceTracker extends EventEmitter {
     this.onData = this.onData.bind(this);
     this.onClose = this.onClose.bind(this);
     this.onError = this.onError.bind(this);
+    this.writeToSocket = this.writeToSocket.bind(this);
+    this.setSocketConfig = this.setSocketConfig.bind(this);
 
+    this.socket = new Socket();
+    this.socket.on("connect", this.onConnect);
     this.socket.on("data", this.onData);
     this.socket.on("error", this.onError);
     this.socket.on("close", this.onClose);
@@ -91,26 +91,18 @@ export class AdbDeviceTracker extends EventEmitter {
     const payloadLength = zeroPad(payload.length.toString(16), 4);
     const socketWriteResult = socket.write(`${payloadLength}${payload}`);
 
-    if (!socketWriteResult) {
-      this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" })
-    }
+    if (!socketWriteResult)
+      this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
   }
 
-  public start(): Socket {
-    return this.socket.connect({
-      host: this.socketConfig.host,
-      port: this.socketConfig.port
-    }, this.onConnect);
+  public start(): void {
+    this.socket.connect(this.socketConfig);
   }
 
   private onConnect(): void {
+    this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.");
     this.writeToSocket(this.socket, "host:track-devices-l");
-    clearTimeout(this.timeout);
-
-    this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.")
   }
-
-
 
   private onData(data: Buffer): void {
     this.adbDevices = [];
@@ -145,12 +137,6 @@ export class AdbDeviceTracker extends EventEmitter {
         .replace(/transport_id:|device:|model:|product:/g, "")
         .split(/\s/g);
 
-
-      if (deviceState.toLowerCase() === "authorizing") {
-        this.writeToSocket(this.socket, "host:devices-l");
-        return;
-      }
-
       this.adbDevices.push({
         androidId,
         deviceState,
@@ -161,12 +147,13 @@ export class AdbDeviceTracker extends EventEmitter {
       });
     });
 
-    this.emit("data", this.adbDevices);
+    if (this.adbDevices.length > 0)
+      this.emit("data", this.adbDevices);
   }
 
   private onClose(): void {
-    if (this.socketConfig?.autoReconnect?.enabled)
-      this.timeout = setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
+    if (this.socketConfig.autoReconnect.enabled)
+      setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
   }
 
   private onError(error: NodeJS.ErrnoException): void {

@@ -1,8 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
-/// <reference types="node" />
 import { ExecException } from "child_process";
-import { Socket } from "net";
 import { EventEmitter } from "stream";
 interface IAdbDevice {
     androidId: string;
@@ -35,7 +33,6 @@ export declare class AdbDeviceTracker extends EventEmitter {
     private adbDevices;
     private socket;
     private socketConfig;
-    private timeout;
     private constructor();
     static getInstance(): AdbDeviceTracker;
     setSocketConfig(socketConfig?: Partial<ISocketConfig>): void;
@@ -45,7 +42,7 @@ export declare class AdbDeviceTracker extends EventEmitter {
     };
     private execAdbCommand;
     private writeToSocket;
-    start(): Socket;
+    start(): void;
     private onConnect;
     private onData;
     private onClose;

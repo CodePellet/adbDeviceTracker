@@ -22,7 +22,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 });
             }
         };
-        this.socket = new net_1.Socket();
         this.adbDevices = [];
         this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } };
         this.start = this.start.bind(this);
@@ -30,6 +29,10 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         this.onData = this.onData.bind(this);
         this.onClose = this.onClose.bind(this);
         this.onError = this.onError.bind(this);
+        this.writeToSocket = this.writeToSocket.bind(this);
+        this.setSocketConfig = this.setSocketConfig.bind(this);
+        this.socket = new net_1.Socket();
+        this.socket.on("connect", this.onConnect);
         this.socket.on("data", this.onData);
         this.socket.on("error", this.onError);
         this.socket.on("close", this.onClose);
@@ -46,20 +49,15 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
     writeToSocket(socket, payload) {
         const payloadLength = zeroPad(payload.length.toString(16), 4);
         const socketWriteResult = socket.write(`${payloadLength}${payload}`);
-        if (!socketWriteResult) {
+        if (!socketWriteResult)
             this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
-        }
     }
     start() {
-        return this.socket.connect({
-            host: this.socketConfig.host,
-            port: this.socketConfig.port
-        }, this.onConnect);
+        this.socket.connect(this.socketConfig);
     }
     onConnect() {
-        this.writeToSocket(this.socket, "host:track-devices-l");
-        clearTimeout(this.timeout);
         this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.");
+        this.writeToSocket(this.socket, "host:track-devices-l");
     }
     onData(data) {
         this.adbDevices = [];
@@ -84,10 +82,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             const [androidId, deviceState, product, model, device, transportId] = d
                 .replace(/transport_id:|device:|model:|product:/g, "")
                 .split(/\s/g);
-            if (deviceState.toLowerCase() === "authorizing") {
-                this.writeToSocket(this.socket, "host:devices-l");
-                return;
-            }
             this.adbDevices.push({
                 androidId,
                 deviceState,
@@ -97,12 +91,12 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
                 transportId
             });
         });
-        this.emit("data", this.adbDevices);
+        if (this.adbDevices.length > 0)
+            this.emit("data", this.adbDevices);
     }
     onClose() {
-        var _a, _b;
-        if ((_b = (_a = this.socketConfig) === null || _a === void 0 ? void 0 : _a.autoReconnect) === null || _b === void 0 ? void 0 : _b.enabled)
-            this.timeout = setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
+        if (this.socketConfig.autoReconnect.enabled)
+            setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
     }
     onError(error) {
         this.emit("error", error);
