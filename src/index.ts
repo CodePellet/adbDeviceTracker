@@ -37,15 +37,17 @@ export declare interface AdbDeviceTracker {
 const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 export class AdbDeviceTracker extends EventEmitter {
 
+  private static _instance: AdbDeviceTracker;
   private adbDevices: IAdbDevice[];
-  private socket: Socket = new Socket();
+  private socket: Socket;
   private socketConfig: ISocketConfig;
   private timeout!: NodeJS.Timeout;
 
-  constructor(socketConfig?: Partial<ISocketConfig>) {
+  private constructor() {
     super();
+    this.socket = new Socket();
     this.adbDevices = [];
-    this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 }, ...socketConfig };
+    this.socketConfig = { host: "127.0.0.1", port: 5037, autoReconnect: { enabled: true, intervall: 1000 } };
 
     this.start = this.start.bind(this);
     this.onConnect = this.onConnect.bind(this);
@@ -57,6 +59,14 @@ export class AdbDeviceTracker extends EventEmitter {
     this.socket.on("data", this.onData);
     this.socket.on("error", this.onError);
     this.socket.on("close", this.onClose);
+  }
+
+  public static getInstance() {
+    return this._instance || (this._instance = new this());
+  }
+
+  public setSocketConfig(socketConfig?: Partial<ISocketConfig>): void {
+    this.socketConfig = { ...this.socketConfig, ...socketConfig };
   }
 
   public server = {
@@ -139,6 +149,7 @@ export class AdbDeviceTracker extends EventEmitter {
 
       if (deviceState.toLowerCase() === "authorizing") {
         this.writeToSocket(this.socket, "host:devices-l");
+        return;
       }
 
       this.adbDevices.push({
@@ -150,7 +161,9 @@ export class AdbDeviceTracker extends EventEmitter {
         transportId
       });
     });
-    this.emit("data", this.adbDevices);
+
+    if (this.adbDevices.length > 0)
+      this.emit("data", this.adbDevices);
   }
 
   private onClose(): void {

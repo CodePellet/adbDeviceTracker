@@ -1,6 +1,6 @@
 import { AdbDeviceTracker } from "..";
 
-const tracker = new AdbDeviceTracker();
+const tracker = AdbDeviceTracker.getInstance();
 
 test("Check if info message is of type string", () => {
     tracker.on("info", message => {
