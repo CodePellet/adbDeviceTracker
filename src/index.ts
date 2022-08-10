@@ -105,50 +105,24 @@ export class AdbDeviceTracker extends EventEmitter {
   }
 
   private onData(data: Buffer): void {
-    this.adbDevices = [];
-    const deviceLength = data.toString().replace("OKAY", "").slice(0, 4);
+    const dataString = data.toString().replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "").replace(/\s+/g, " ");
 
-    // Remove the first 4 characters as they represent the data length
-    const deviceString = data
-      .toString()
-      .replace("OKAY", "")
-      .slice(4)
-      .replace(/\s\s+/g, " ");
-
-    // devices get registered as offline for the first time
-    // no information about the device is available at this point
-    // so we do not process this event
-    if (deviceString.match("offline")) return;
-
-    if (deviceLength.match("0000")) {
-      this.adbDevices.push({ androidId: "-1", error: { name: "ENODEVICES", message: "No devices connected" } });
+    if (dataString.match("offline")) return;
+    if (dataString.match("authorizing")) return;
+    if (dataString === "" || dataString.match("0000")) {
       this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
       return;
     }
 
-    const devicesArray = deviceString
-      .slice(0, deviceString.lastIndexOf("\n"))
-      .trim()
-      .split("\n");
+    // remove duplicates from the string as sometimes the same device is listed multiple times
+    const cleanedString = Array.from(new Set(dataString.split("\n"))).toString();
 
-    // eslint-disable-next-line array-callback-return
-    devicesArray.forEach((d) => {
-      const [androidId, deviceState, product, model, device, transportId] = d
-        .replace(/transport_id:|device:|model:|product:/g, "")
-        .split(/\s/g);
-
-      this.adbDevices.push({
-        androidId,
-        deviceState,
-        product,
-        model,
-        device,
-        transportId
-      });
+    this.adbDevices = cleanedString.split("\n").map(d => {
+      const [androidId, deviceState, product, model, device, transportId] = d.split(/\s/g);
+      return { androidId, deviceState, product, model, device, transportId };
     });
 
-    if (this.adbDevices.length > 0)
-      this.emit("data", this.adbDevices);
+    this.emit("data", this.adbDevices);
   }
 
   private onClose(): void {

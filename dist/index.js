@@ -60,39 +60,21 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         this.writeToSocket(this.socket, "host:track-devices-l");
     }
     onData(data) {
-        this.adbDevices = [];
-        const deviceLength = data.toString().replace("OKAY", "").slice(0, 4);
-        const deviceString = data
-            .toString()
-            .replace("OKAY", "")
-            .slice(4)
-            .replace(/\s\s+/g, " ");
-        if (deviceString.match("offline"))
+        const dataString = data.toString().replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "").replace(/\s+/g, " ");
+        if (dataString.match("offline"))
             return;
-        if (deviceLength.match("0000")) {
-            this.adbDevices.push({ androidId: "-1", error: { name: "ENODEVICES", message: "No devices connected" } });
+        if (dataString.match("authorizing"))
+            return;
+        if (dataString === "" || dataString.match("0000")) {
             this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
             return;
         }
-        const devicesArray = deviceString
-            .slice(0, deviceString.lastIndexOf("\n"))
-            .trim()
-            .split("\n");
-        devicesArray.forEach((d) => {
-            const [androidId, deviceState, product, model, device, transportId] = d
-                .replace(/transport_id:|device:|model:|product:/g, "")
-                .split(/\s/g);
-            this.adbDevices.push({
-                androidId,
-                deviceState,
-                product,
-                model,
-                device,
-                transportId
-            });
+        const cleanedString = Array.from(new Set(dataString.split("\n"))).toString();
+        this.adbDevices = cleanedString.split("\n").map(d => {
+            const [androidId, deviceState, product, model, device, transportId] = d.split(/\s/g);
+            return { androidId, deviceState, product, model, device, transportId };
         });
-        if (this.adbDevices.length > 0)
-            this.emit("data", this.adbDevices);
+        this.emit("data", this.adbDevices);
     }
     onClose() {
         if (this.socketConfig.autoReconnect.enabled)
