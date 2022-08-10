@@ -55,7 +55,6 @@ export class AdbDeviceTracker extends EventEmitter {
     this.onClose = this.onClose.bind(this);
     this.onError = this.onError.bind(this);
 
-    this.socket.on("connect", this.onConnect)
     this.socket.on("data", this.onData);
     this.socket.on("error", this.onError);
     this.socket.on("close", this.onClose);
@@ -101,7 +100,7 @@ export class AdbDeviceTracker extends EventEmitter {
     return this.socket.connect({
       host: this.socketConfig.host,
       port: this.socketConfig.port
-    });
+    }, this.onConnect);
   }
 
   private onConnect(): void {
@@ -162,8 +161,7 @@ export class AdbDeviceTracker extends EventEmitter {
       });
     });
 
-    if (this.adbDevices.length > 0)
-      this.emit("data", this.adbDevices);
+    this.emit("data", this.adbDevices);
   }
 
   private onClose(): void {
