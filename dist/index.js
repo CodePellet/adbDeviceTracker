@@ -53,23 +53,23 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
     }
     start() {
-        this.socket.connect(this.socketConfig);
+        return this.socket.connect(this.socketConfig);
     }
     onConnect() {
         this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.");
         this.writeToSocket(this.socket, "host:track-devices-l");
     }
     onData(data) {
-        const dataString = data.toString().replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "").replace(/\s+/g, " ");
+        const dataString = data.toString().substring(0, data.toString().lastIndexOf("\n")).replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "");
         if (dataString.match("offline"))
             return;
         if (dataString === "" || dataString.match("0000")) {
             this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
             return;
         }
-        const cleanedString = Array.from(new Set(dataString.split("\n"))).toString();
-        this.adbDevices = cleanedString.split("\n").map(d => {
-            const [androidId, deviceState, product, model, device, transportId] = d.split(/\s/g);
+        const uniqueDevices = Array.from(new Set(dataString.split("\n")));
+        this.adbDevices = uniqueDevices.map(d => {
+            const [androidId, deviceState, product, model, device, transportId] = d.replace(/\s+/g, " ").split(/\s/g);
             return { androidId, deviceState, product, model, device, transportId };
         });
         this.emit("data", this.adbDevices);

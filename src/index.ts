@@ -95,8 +95,8 @@ export class AdbDeviceTracker extends EventEmitter {
       this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
   }
 
-  public start(): void {
-    this.socket.connect(this.socketConfig);
+  public start(): Socket {
+    return this.socket.connect(this.socketConfig);
   }
 
   private onConnect(): void {
@@ -105,7 +105,7 @@ export class AdbDeviceTracker extends EventEmitter {
   }
 
   private onData(data: Buffer): void {
-    const dataString = data.toString().replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "").replace(/\s+/g, " ");
+    const dataString = data.toString().substring(0, data.toString().lastIndexOf("\n")).replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "");
 
     if (dataString.match("offline")) return;
     // if (dataString.match("authorizing")) return;
@@ -115,10 +115,10 @@ export class AdbDeviceTracker extends EventEmitter {
     }
 
     // remove duplicates from the string as sometimes the same device is listed multiple times
-    const cleanedString = Array.from(new Set(dataString.split("\n"))).toString();
+    const uniqueDevices = Array.from(new Set(dataString.split("\n")));
 
-    this.adbDevices = cleanedString.split("\n").map(d => {
-      const [androidId, deviceState, product, model, device, transportId] = d.split(/\s/g);
+    this.adbDevices = uniqueDevices.map(d => {
+      const [androidId, deviceState, product, model, device, transportId] = d.replace(/\s+/g, " ").split(/\s/g);
       return { androidId, deviceState, product, model, device, transportId };
     });
 
