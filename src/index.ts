@@ -78,6 +78,14 @@ export class AdbDeviceTracker extends EventEmitter {
     exec("adb " + command, callback);
   }
 
+  private writeToSocket(socket: Socket, payload: string): void {
+    const payloadLength = zeroPad(payload.length.toString(16), 4);
+    const socketWriteResult = socket.write(`${payloadLength}${payload}`);
+
+    if (!socketWriteResult) {
+      this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" })
+    }
+  }
 
   public start(): Socket {
     return this.socket.connect({
@@ -86,20 +94,16 @@ export class AdbDeviceTracker extends EventEmitter {
     });
   }
 
-  private onConnect() {
-    const trackDevicesPayload: string = "host:track-devices-l";
-    const trackDevicesPayloadLength = zeroPad(trackDevicesPayload.length.toString(16), 4);
-    const socketWriteResult = this.socket.write(`${trackDevicesPayloadLength}${trackDevicesPayload}`);
-
+  private onConnect(): void {
+    this.writeToSocket(this.socket, "host:track-devices-l");
     clearTimeout(this.timeout);
 
-    if (!socketWriteResult) {
-      this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" })
-    }
     this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.")
   }
 
-  private onData(data: Buffer) {
+
+
+  private onData(data: Buffer): void {
     this.adbDevices = [];
     const deviceLength = data.toString().replace("OKAY", "").slice(0, 4);
 
@@ -132,6 +136,11 @@ export class AdbDeviceTracker extends EventEmitter {
         .replace(/transport_id:|device:|model:|product:/g, "")
         .split(/\s/g);
 
+
+      if (deviceState.toLowerCase() === "authorizing") {
+        this.writeToSocket(this.socket, "host:devices-l");
+      }
+
       this.adbDevices.push({
         androidId,
         deviceState,
@@ -149,7 +158,7 @@ export class AdbDeviceTracker extends EventEmitter {
       this.timeout = setTimeout(this.start, this.socketConfig.autoReconnect.intervall);
   }
 
-  private onError(error: NodeJS.ErrnoException) {
+  private onError(error: NodeJS.ErrnoException): void {
     this.emit("error", error);
   }
 

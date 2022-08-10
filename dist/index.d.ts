@@ -41,6 +41,7 @@ export declare class AdbDeviceTracker extends EventEmitter {
         stop: (callback: (error: ExecException | null, stdout: string, stderr: string) => void) => void;
     };
     private execAdbCommand;
+    private writeToSocket;
     start(): Socket;
     private onConnect;
     private onData;

@@ -38,6 +38,13 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
     execAdbCommand(command, callback) {
         (0, child_process_1.exec)("adb " + command, callback);
     }
+    writeToSocket(socket, payload) {
+        const payloadLength = zeroPad(payload.length.toString(16), 4);
+        const socketWriteResult = socket.write(`${payloadLength}${payload}`);
+        if (!socketWriteResult) {
+            this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
+        }
+    }
     start() {
         return this.socket.connect({
             host: this.socketConfig.host,
@@ -45,13 +52,8 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         });
     }
     onConnect() {
-        const trackDevicesPayload = "host:track-devices-l";
-        const trackDevicesPayloadLength = zeroPad(trackDevicesPayload.length.toString(16), 4);
-        const socketWriteResult = this.socket.write(`${trackDevicesPayloadLength}${trackDevicesPayload}`);
+        this.writeToSocket(this.socket, "host:track-devices-l");
         clearTimeout(this.timeout);
-        if (!socketWriteResult) {
-            this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });
-        }
         this.emit("info", "[AdbDeviceTracker] Tracker successfully connected to adb socket.");
     }
     onData(data) {
@@ -77,6 +79,9 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
             const [androidId, deviceState, product, model, device, transportId] = d
                 .replace(/transport_id:|device:|model:|product:/g, "")
                 .split(/\s/g);
+            if (deviceState.toLowerCase() === "authorizing") {
+                this.writeToSocket(this.socket, "host:devices-l");
+            }
             this.adbDevices.push({
                 androidId,
                 deviceState,
