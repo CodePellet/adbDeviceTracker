@@ -63,8 +63,6 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         const dataString = data.toString().replace(/^OKAY/g, "").replace(/^[A-Za-z0-9]{4}/g, "").replace(/transport_id:|device:|model:|product:/g, "").replace(/\s+/g, " ");
         if (dataString.match("offline"))
             return;
-        if (dataString.match("authorizing"))
-            return;
         if (dataString === "" || dataString.match("0000")) {
             this.emit("error", { code: "ENODEVICES", name: "ENODEVICES", message: "No devices connected" });
             return;
