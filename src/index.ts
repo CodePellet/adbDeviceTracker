@@ -1,5 +1,5 @@
-import { ChildProcess, exec, ExecException, execSync } from "child_process";
-import { Socket, createConnection } from "net";
+import { exec, ExecException } from "child_process";
+import { Socket } from "net";
 import { EventEmitter } from "stream";
 
 interface IAdbDevice {
