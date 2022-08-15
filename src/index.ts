@@ -1,4 +1,4 @@
-import { ChildProcess, exec, ExecException, execSync } from "child_process";
+import { exec, ExecException } from "child_process";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
 
