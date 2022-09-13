@@ -1,12 +1,11 @@
-import { Socket } from "net";
 import { AdbDeviceTracker } from "..";
 
 const tracker = AdbDeviceTracker.getInstance();
 
 test("Check if info message is of type string", () => {
     tracker.on("info", message => {
-        expect(message).toBeInstanceOf(String);
-        // expect((typeof message === 'string')).toBeTruthy();
+        // expect(message).toBeInstanceOf(String);
+        expect((typeof message === 'string')).toBeTruthy();
     });
     tracker.emit("info", "This is a info message");
 });
