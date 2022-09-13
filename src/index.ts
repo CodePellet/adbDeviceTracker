@@ -27,7 +27,7 @@ interface AdbDeviceEvents {
   error: (error: NodeJS.ErrnoException) => void;
 }
 
-export declare interface AdbDeviceTracker {
+export interface AdbDeviceTracker {
   on<U extends keyof AdbDeviceEvents>(event: U, listener: AdbDeviceEvents[U]): this;
   emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
