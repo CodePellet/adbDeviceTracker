@@ -70,13 +70,13 @@ export class AdbDeviceTracker extends EventEmitter {
 
   public server = {
     start: (callback: (error: ExecException | null, stdout: string, stderr: string) => void): void => {
-      this.execAdbCommand("start-server", function (error, stdout, stderr) {
+      this.execAdbCommand("start-server", (error, stdout, stderr) => {
         if (callback)
           callback(error, stdout, stderr);
       });
     },
     stop: (callback: (error: ExecException | null, stdout: string, stderr: string) => void): void => {
-      this.execAdbCommand("kill-server", function (error, stdout, stderr) {
+      this.execAdbCommand("kill-server", (error, stdout, stderr) => {
         if (callback)
           callback(error, stdout, stderr);
       });

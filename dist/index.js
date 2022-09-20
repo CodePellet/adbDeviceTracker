@@ -10,13 +10,13 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         super();
         this.server = {
             start: (callback) => {
-                this.execAdbCommand("start-server", function (error, stdout, stderr) {
+                this.execAdbCommand("start-server", (error, stdout, stderr) => {
                     if (callback)
                         callback(error, stdout, stderr);
                 });
             },
             stop: (callback) => {
-                this.execAdbCommand("kill-server", function (error, stdout, stderr) {
+                this.execAdbCommand("kill-server", (error, stdout, stderr) => {
                     if (callback)
                         callback(error, stdout, stderr);
                 });
