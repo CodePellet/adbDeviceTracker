@@ -4,7 +4,7 @@
 import { ExecException } from "child_process";
 import { Socket } from "net";
 import { EventEmitter } from "stream";
-interface IAdbDevice {
+export interface IAdbDevice {
     androidId: string;
     deviceState?: string;
     product?: string;
@@ -13,7 +13,7 @@ interface IAdbDevice {
     transportId?: string;
     error?: Error;
 }
-interface ISocketConfig {
+export interface ISocketConfig {
     host: string;
     port: number;
     autoReconnect: {
