@@ -30,6 +30,7 @@ export interface AdbDeviceTracker {
     on<U extends keyof AdbDeviceEvents>(event: U, listener: AdbDeviceEvents[U]): this;
     emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
+export declare const zeroPad: (num: string, places: number) => string;
 export declare class AdbDeviceTracker extends EventEmitter {
     private static _instance;
     private adbDevices;

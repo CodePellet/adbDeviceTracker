@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdbDeviceTracker = void 0;
+exports.AdbDeviceTracker = exports.zeroPad = void 0;
 const child_process_1 = require("child_process");
 const net_1 = require("net");
 const stream_1 = require("stream");
 const zeroPad = (num, places) => String(num).padStart(places, "0");
+exports.zeroPad = zeroPad;
 class AdbDeviceTracker extends stream_1.EventEmitter {
     constructor() {
         super();
@@ -47,7 +48,7 @@ class AdbDeviceTracker extends stream_1.EventEmitter {
         (0, child_process_1.exec)("adb " + command, callback);
     }
     writeToSocket(socket, payload) {
-        const payloadLength = zeroPad(payload.length.toString(16), 4);
+        const payloadLength = (0, exports.zeroPad)(payload.length.toString(16), 4);
         const socketWriteResult = socket.write(`${payloadLength}${payload}`);
         if (!socketWriteResult)
             this.emit("error", { name: "socketWriteDataError", message: "Writing data to socket failed" });

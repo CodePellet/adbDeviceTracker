@@ -32,7 +32,7 @@ export interface AdbDeviceTracker {
   emit<U extends keyof AdbDeviceEvents>(event: U, ...args: Parameters<AdbDeviceEvents[U]>): boolean;
 }
 
-const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
+export const zeroPad = (num: string, places: number) => String(num).padStart(places, "0");
 export class AdbDeviceTracker extends EventEmitter {
 
   private static _instance: AdbDeviceTracker;
